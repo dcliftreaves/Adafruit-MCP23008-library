@@ -1,4 +1,4 @@
-#include <Wire.h>
+#include <SoftWire.h>
 #include "Adafruit_MCP23008.h"
 
 // Basic pin reading and pullup test for the MCP23008 I/O expander

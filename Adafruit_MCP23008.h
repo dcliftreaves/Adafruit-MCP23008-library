@@ -1,29 +1,24 @@
-/*************************************************** 
+/***************************************************
   This is a library for the MCP23008 i2c port expander
 
-  These displays use I2C to communicate, 2 pins are required to  
+  These displays use I2C to communicate, 2 pins are required to
   interface
-  Adafruit invests time and resources providing this open source code, 
-  please support Adafruit and open-source hardware by purchasing 
+  Adafruit invests time and resources providing this open source code,
+  please support Adafruit and open-source hardware by purchasing
   products from Adafruit!
 
-  Written by Limor Fried/Ladyada for Adafruit Industries.  
+  Written by Limor Fried/Ladyada for Adafruit Industries.
   BSD license, all text above must be included in any redistribution
  ****************************************************/
 
 #ifndef _ADAFRUIT_MCP23008_H
 #define _ADAFRUIT_MCP23008_H
-// Don't forget the Wire library
-#ifdef __AVR_ATtiny85__
-  #include <TinyWireM.h>
-#else
-  #include <Wire.h>
-#endif
 
+// Don't forget the Wire library
 class Adafruit_MCP23008 {
 public:
-  void begin(uint8_t addr);
-  void begin(void);
+  void begin(uint8_t addr, SoftWire* inSw);
+  void begin(SoftWire* inSw);
 
   void pinMode(uint8_t p, uint8_t d);
   void digitalWrite(uint8_t p, uint8_t d);
@@ -34,6 +29,7 @@ public:
 
  private:
   uint8_t i2caddr;
+  SoftWire* sw;
   uint8_t read8(uint8_t addr);
   void write8(uint8_t addr, uint8_t data);
 };

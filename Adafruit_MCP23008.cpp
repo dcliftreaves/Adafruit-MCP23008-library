@@ -1,13 +1,13 @@
-/*************************************************** 
+/***************************************************
   This is a library for the MCP23008 i2c port expander
 
-  These displays use I2C to communicate, 2 pins are required to  
+  These displays use I2C to communicate, 2 pins are required to
   interface
-  Adafruit invests time and resources providing this open source code, 
-  please support Adafruit and open-source hardware by purchasing 
+  Adafruit invests time and resources providing this open source code,
+  please support Adafruit and open-source hardware by purchasing
   products from Adafruit!
 
-  Written by Limor Fried/Ladyada for Adafruit Industries.  
+  Written by Limor Fried/Ladyada for Adafruit Industries.
   BSD license, all text above must be included in any redistribution
  ****************************************************/
 
@@ -16,13 +16,7 @@
 #else
  #include "WProgram.h"
 #endif
-#ifdef __AVR_ATtiny85__
-  #include <TinyWireM.h>
-  #define Wire TinyWireM
-#else
-  #include <Wire.h>
-#endif
-
+#include <SoftWire.h>
 #ifdef __AVR
   #include <avr/pgmspace.h>
 #elif defined(ESP8266)
@@ -34,62 +28,63 @@
 ////////////////////////////////////////////////////////////////////////////////
 // RTC_DS1307 implementation
 
-void Adafruit_MCP23008::begin(uint8_t addr) {
+void Adafruit_MCP23008::begin(uint8_t addr, SoftWire* inSw) {
   if (addr > 7) {
     addr = 7;
   }
   i2caddr = addr;
+  sw = inSw;
 
-  Wire.begin();
+  // sw->begin();
 
   // set defaults!
-  Wire.beginTransmission(MCP23008_ADDRESS | i2caddr);
+  sw->beginTransmission(MCP23008_ADDRESS | i2caddr);
 #if ARDUINO >= 100
-  Wire.write((byte)MCP23008_IODIR);
-  Wire.write((byte)0xFF);  // all inputs
-  Wire.write((byte)0x00);
-  Wire.write((byte)0x00);
-  Wire.write((byte)0x00);
-  Wire.write((byte)0x00);
-  Wire.write((byte)0x00);
-  Wire.write((byte)0x00);
-  Wire.write((byte)0x00);
-  Wire.write((byte)0x00);
-  Wire.write((byte)0x00);	
+  sw->write((byte)MCP23008_IODIR);
+  sw->write((byte)0xFF);  // all inputs
+  sw->write((byte)0x00);
+  sw->write((byte)0x00);
+  sw->write((byte)0x00);
+  sw->write((byte)0x00);
+  sw->write((byte)0x00);
+  sw->write((byte)0x00);
+  sw->write((byte)0x00);
+  sw->write((byte)0x00);
+  sw->write((byte)0x00);
 #else
-  Wire.send(MCP23008_IODIR);
-  Wire.send(0xFF);  // all inputs
-  Wire.send(0x00);
-  Wire.send(0x00);
-  Wire.send(0x00);
-  Wire.send(0x00);
-  Wire.send(0x00);
-  Wire.send(0x00);
-  Wire.send(0x00);
-  Wire.send(0x00);
-  Wire.send(0x00);	
+  sw->send(MCP23008_IODIR);
+  sw->send(0xFF);  // all inputs
+  sw->send(0x00);
+  sw->send(0x00);
+  sw->send(0x00);
+  sw->send(0x00);
+  sw->send(0x00);
+  sw->send(0x00);
+  sw->send(0x00);
+  sw->send(0x00);
+  sw->send(0x00);
 #endif
-  Wire.endTransmission();
+  sw->endTransmission();
 
 }
 
-void Adafruit_MCP23008::begin(void) {
-  begin(0);
+void Adafruit_MCP23008::begin(SoftWire* inSw) {
+  begin(0, inSw);
 }
 
 void Adafruit_MCP23008::pinMode(uint8_t p, uint8_t d) {
   uint8_t iodir;
-  
+
 
   // only 8 bits!
   if (p > 7)
     return;
-  
+
   iodir = read8(MCP23008_IODIR);
 
   // set the pin and direction
   if (d == INPUT) {
-    iodir |= 1 << p; 
+    iodir |= 1 << p;
   } else {
     iodir &= ~(1 << p);
   }
@@ -99,7 +94,7 @@ void Adafruit_MCP23008::pinMode(uint8_t p, uint8_t d) {
 }
 
 uint8_t Adafruit_MCP23008::readGPIO(void) {
-  // read the current GPIO input 
+  // read the current GPIO input
   return read8(MCP23008_GPIO);
 }
 
@@ -110,7 +105,7 @@ void Adafruit_MCP23008::writeGPIO(uint8_t gpio) {
 
 void Adafruit_MCP23008::digitalWrite(uint8_t p, uint8_t d) {
   uint8_t gpio;
-  
+
   // only 8 bits!
   if (p > 7)
     return;
@@ -120,7 +115,7 @@ void Adafruit_MCP23008::digitalWrite(uint8_t p, uint8_t d) {
 
   // set the pin and direction
   if (d == HIGH) {
-    gpio |= 1 << p; 
+    gpio |= 1 << p;
   } else {
     gpio &= ~(1 << p);
   }
@@ -131,7 +126,7 @@ void Adafruit_MCP23008::digitalWrite(uint8_t p, uint8_t d) {
 
 void Adafruit_MCP23008::pullUp(uint8_t p, uint8_t d) {
   uint8_t gppu;
-  
+
   // only 8 bits!
   if (p > 7)
     return;
@@ -139,7 +134,7 @@ void Adafruit_MCP23008::pullUp(uint8_t p, uint8_t d) {
   gppu = read8(MCP23008_GPPU);
   // set the pin and direction
   if (d == HIGH) {
-    gppu |= 1 << p; 
+    gppu |= 1 << p;
   } else {
     gppu &= ~(1 << p);
   }
@@ -157,31 +152,31 @@ uint8_t Adafruit_MCP23008::digitalRead(uint8_t p) {
 }
 
 uint8_t Adafruit_MCP23008::read8(uint8_t addr) {
-  Wire.beginTransmission(MCP23008_ADDRESS | i2caddr);
+  sw->beginTransmission(MCP23008_ADDRESS | i2caddr);
 #if ARDUINO >= 100
-  Wire.write((byte)addr);	
+  sw->write((byte)addr);
 #else
-  Wire.send(addr);	
+  sw->send(addr);
 #endif
-  Wire.endTransmission();
-  Wire.requestFrom(MCP23008_ADDRESS | i2caddr, 1);
+  sw->endTransmission();
+  sw->requestFrom(MCP23008_ADDRESS | i2caddr, 1);
 
 #if ARDUINO >= 100
-  return Wire.read();
+  return sw->read();
 #else
-  return Wire.receive();
+  return sw->receive();
 #endif
 }
 
 
 void Adafruit_MCP23008::write8(uint8_t addr, uint8_t data) {
-  Wire.beginTransmission(MCP23008_ADDRESS | i2caddr);
+  sw->beginTransmission(MCP23008_ADDRESS | i2caddr);
 #if ARDUINO >= 100
-  Wire.write((byte)addr);
-  Wire.write((byte)data);
+  sw->write((byte)addr);
+  sw->write((byte)data);
 #else
-  Wire.send(addr);	
-  Wire.send(data);
+  sw->send(addr);
+  sw->send(data);
 #endif
-  Wire.endTransmission();
+  sw->endTransmission();
 }
